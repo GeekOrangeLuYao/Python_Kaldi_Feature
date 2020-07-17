@@ -1,6 +1,7 @@
 import numpy as np
 
 class WaveInfo(object):
+    # TODO: use wave or soundfile lib to get this instead of reading bytes
     def __init__(self,
                  samp_freq = 0,
                  samp_count = 0,
@@ -78,4 +79,5 @@ class WaveData(object):
     
     def clear(self):
         # Kaldi: WaveData::Clear
+        # TODO
         raise NotImplementedError
