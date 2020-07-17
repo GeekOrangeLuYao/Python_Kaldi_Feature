@@ -2,14 +2,14 @@ import numpy as np
 
 import logging
 
-from numpy.core.function_base import logspace
 from feature.feature_window import FrameExtractionOptions
 from feature.mel_computations import MelBanks, MelBanksOptions
+
 
 class MfccOptions(object):
     def __init__(self,
                  frame_opts: FrameExtractionOptions,
-                 mel_opts: MelBanksOptions = MelBanksOptions(num_bins = 23)) -> None:
+                 mel_opts: MelBanksOptions = MelBanksOptions(num_bins=23)) -> None:
         self.frame_opts = frame_opts
         self.mel_opts = mel_opts
 
@@ -18,6 +18,7 @@ class MfccOptions(object):
         self.energy_floor = 0.0
         self.raw_energy = True
         self.cepstral_lifter = 22.0
+
 
 class MfccComputer(object):
 
@@ -29,8 +30,9 @@ class MfccComputer(object):
 
         num_bins = opts.mel_opts.num_bins
         if opts.num_ceps > num_bins:
-            logging.error(f"num-ceps cannot be larger than num-mel-bins.  It should be smaller or equal. You provided num-ceps: {opts.num_ceps} and num-mel-bins: {num_bins}")
-        
+            logging.error(
+                f"num-ceps cannot be larger than num-mel-bins.  It should be smaller or equal. You provided num-ceps: {opts.num_ceps} and num-mel-bins: {num_bins}")
+
         dct_matrix = np.zeros((num_bins, num_bins))
         # TODO: complete dct matrix
 
@@ -45,10 +47,10 @@ class MfccComputer(object):
 
     def need_raw_log_energy(self):
         return (self.opts.use_energy and self.opts.raw_energy)
-    
+
     def get_FrameOptions(self):
         return self.opts.frame_opts
-    
+
     def compute(self,
                 signal_log_energy,
                 vtln_warp,
@@ -56,8 +58,6 @@ class MfccComputer(object):
                 feature: np.ndarray):
         assert signal_frame.shape[0] == self.opts.frame_opts.get_padded_window_size()
         assert feature.shape[0] == self.get_dim()
-    
-
 
     def _get_mel_banks(self, vtln_warp):
         res = self.mel_banks[vtln_warp]
@@ -68,5 +68,5 @@ class MfccComputer(object):
             self.mel_banks[vtln_warp] = this_mel_banks
         else:
             this_mel_banks = res[1]
-        
+
         return this_mel_banks

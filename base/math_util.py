@@ -9,4 +9,3 @@ def RoundUpToNearestPowerOfTwo(n):
     n |= (n >> 8)
     n |= (n >> 16)
     return n + 1
-    

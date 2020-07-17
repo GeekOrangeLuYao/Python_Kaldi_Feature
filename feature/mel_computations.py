@@ -2,24 +2,25 @@ import math
 import logging
 
 import numpy as np
-from numpy.lib.type_check import _asscalar_dispatcher
 
 from feature.feature_window import FrameExtractionOptions
 
+
 class MelBanksOptions(object):
     def __init__(self,
-                 num_bins = 25,
-                 low_freq = 20,
-                 high_freq = 0,
-                 vltn_low = 100,
-                 vltn_high = -500,
-                 debug_mel = False) -> None:
+                 num_bins=25,
+                 low_freq=20,
+                 high_freq=0,
+                 vltn_low=100,
+                 vltn_high=-500,
+                 debug_mel=False) -> None:
         self.num_bins = num_bins
         self.low_freq = low_freq
         self.high_freq = high_freq
         self.vltn_low = vltn_low
         self.vltn_high = vltn_high
         self.debug_mel = debug_mel
+
 
 class MelBanks(object):
 
@@ -30,7 +31,7 @@ class MelBanks(object):
         self.num_bins = opts.num_bins
         if self.num_bins < 3:
             logging.error("Must have at least 3 mel bins")
-        
+
         sample_freq = frame_opts.samp_freq
         window_length_padded = frame_opts.get_padded_window_size()
 
@@ -44,14 +45,14 @@ class MelBanks(object):
             high_freq = opts.high_freq
         else:
             high_freq = nyquist + opts.high_freq
-        
+
         if low_freq < 0.0 or low_freq >= nyquist or high_freq <= 0.0 or high_freq > nyquist or high_freq <= low_freq:
             logging.error(f"Bad values in options: low-freq {low_freq} and high-freq {high_freq} vs. nyquist {nyquist}")
-        
+
         fft_bin_width = sample_freq / window_length_padded
         mel_low_freq = self.MelScale(low_freq)
         mel_high_freq = self.MelScale(high_freq)
-        
+
         self.debug = opts.debug_mel
         mel_freq_delta = (mel_high_freq - mel_low_freq) / (self.num_bins + 1)
 
@@ -60,16 +61,17 @@ class MelBanks(object):
 
         if vtln_high < 0.0:
             vtln_high += nyquist
-        
+
         if vtln_warp_factor != 1.0 and \
-           (vtln_low < 0.0 or vtln_low <= low_freq \
-            or vtln_low >= high_freq \
-            or vtln_high <= 0.0 or vtln_high >= high_freq \
-            or vtln_high <= vtln_low):
-           logging.error(f"Bad values in options: vtln-low {vtln_low} and vtln-high {vtln_high}, versus low-freq {low_freq} and high-freq {high_freq}")
-        
+                (vtln_low < 0.0 or vtln_low <= low_freq \
+                 or vtln_low >= high_freq \
+                 or vtln_high <= 0.0 or vtln_high >= high_freq \
+                 or vtln_high <= vtln_low):
+            logging.error(
+                f"Bad values in options: vtln-low {vtln_low} and vtln-high {vtln_high}, versus low-freq {low_freq} and high-freq {high_freq}")
+
         self.bins = []
-        self.center_freqs = np.zeros((self.num_bins, ))
+        self.center_freqs = np.zeros((self.num_bins,))
 
         for bin in range(self.num_bins):
             left_mel = mel_low_freq + bin * mel_freq_delta
@@ -86,7 +88,7 @@ class MelBanks(object):
 
             self.center_freqs[bin] = self.InverseMelScale(center_mel)
 
-            this_bin = np.zeros((num_fft_bins, ))
+            this_bin = np.zeros((num_fft_bins,))
             first_index = -1
             last_index = -1
             for i in range(num_fft_bins):
@@ -97,18 +99,18 @@ class MelBanks(object):
                     if mel <= center_mel:
                         weight = (mel - left_mel) / (center_mel - left_mel)
                     else:
-                        weight = (right_mel-mel) / (right_mel-center_mel)
+                        weight = (right_mel - mel) / (right_mel - center_mel)
                     this_bin[i] = weight
                     if first_index == -1:
                         first_index = i
                     last_index = i
-            
+
             assert first_index != -1 and last_index >= first_index, "You may have set --num-mel-bins too large"
 
             size = last_index + 1 - first_index
             temp_vector = np.copy(this_bin[first_index: first_index + size])
             self.bins.append((first_index, temp_vector))
-        
+
         if self.debug:
             for i in range(len(self.bins)):
                 logging.info(f"bin {i}, offset = {self.bins[i][0]}, vec = {self.bins[i][1]}")
@@ -116,7 +118,7 @@ class MelBanks(object):
     @staticmethod
     def MelScale(self, freq):
         return 1127.0 * math.log(1. + freq / 700.)
-    
+
     @staticmethod
     def InverseMelScale(self, mel_freq):
         return 700. * (math.exp(mel_freq / 1127.) - 1.)
@@ -131,7 +133,7 @@ class MelBanks(object):
                      freq):
         if freq < low_freq or freq > high_freq:
             return freq
-        
+
         assert vtln_low_cutoff > low_freq, "be sure to set the --vtln-low option higher than --low-freq"
         assert vtln_high_cutoff < high_freq, "be sure to set the --vtln-high option lower than --high-freq [or negative]"
 
@@ -163,5 +165,5 @@ class MelBanks(object):
                         vtln_warp_factor,
                         mel_freq):
         return self.MelScale(self.VtlnWarpFreq(vtln_low_cutoff, vtln_high_cutoff,
-                                          low_freq, high_freq,
-                                          vtln_warp_factor, self.InverseMelScale(mel_freq)))
+                                               low_freq, high_freq,
+                                               vtln_warp_factor, self.InverseMelScale(mel_freq)))
