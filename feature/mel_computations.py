@@ -167,3 +167,10 @@ class MelBanks(object):
         return self.MelScale(self.VtlnWarpFreq(vtln_low_cutoff, vtln_high_cutoff,
                                                low_freq, high_freq,
                                                vtln_warp_factor, self.InverseMelScale(mel_freq)))
+
+
+def ComputeLifterCoeffs(Q, coeffs: np.ndarray) -> np.ndarray:
+    size = coeffs.shape[0]
+    for i in range(size):
+        coeffs[i] = 1.0 + 0.5 * Q * np.sin(np.pi * i / Q)
+    return coeffs

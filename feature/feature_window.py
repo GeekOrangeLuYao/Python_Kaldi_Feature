@@ -38,3 +38,10 @@ class FrameExtractionOptions(object):
             return RoundUpToNearestPowerOfTwo(self.get_window_size())
         else:
             return self.get_padded_window_size()
+
+
+class FeatureWindowFunction(object):
+    def __init__(self,
+                 opts: FrameExtractionOptions):
+        self.opts = opts
+        self.windows = None

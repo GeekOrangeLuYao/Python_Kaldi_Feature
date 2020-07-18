@@ -3,7 +3,7 @@ import numpy as np
 import logging
 
 from feature.feature_window import FrameExtractionOptions
-from feature.mel_computations import MelBanks, MelBanksOptions
+from feature.mel_computations import MelBanks, MelBanksOptions, ComputeLifterCoeffs
 from matrix.matrix_functions import ComputeDctMatrix
 
 class MfccOptions(object):
@@ -37,12 +37,22 @@ class MfccComputer(object):
         dct_matrix = ComputeDctMatrix(dct_matrix)
         self.dct_matrix = dct_matrix[:opts.num_ceps, :num_bins]
         
-        # TODO update cepstral_lifter
+        if opts.cepstral_lifter != 0.0:
+            self.lifter_coeffs = np.zeros((opts.num_ceps, ))
+            self.lifter_coeffs = ComputeLifterCoeffs(opts.cepstral_lifter, self.lifter_coeffs)
+
+        if opts.energy_floor > 0.0:
+            # TODO: check Log in Kaldi
+            self.log_energy_floor = np.log(opts.energy_floor)
+        padded_window_size = opts.frame_opts.get_padded_window_size()
+
+        if ((padded_window_size) & (padded_window_size - 1)) == 0:
+            # TODO: SplitRadixRealFft
+            self.srfft = np.zeros((padded_window_size, ))
 
         # The data not used, should be used in the following functions
-        self.lifter_coeffs = None
-        self.log_energy_floor = 0.0
         self.mel_banks = dict()
+        self._get_mel_banks(1.0)
 
     def get_dim(self) -> int:
         return self.opts.num_ceps
@@ -53,13 +63,17 @@ class MfccComputer(object):
     def get_FrameOptions(self):
         return self.opts.frame_opts
 
-    def compute(self,
+    def Compute(self,
                 signal_log_energy,
                 vtln_warp,
                 signal_frame: np.ndarray,
                 feature: np.ndarray):
         assert signal_frame.shape[0] == self.opts.frame_opts.get_padded_window_size()
         assert feature.shape[0] == self.get_dim()
+
+        mel_banks: MelBanks = self._get_mel_banks(vtln_warp)
+
+        # TODO: finished compute
 
     def _get_mel_banks(self, vtln_warp):
         res = self.mel_banks[vtln_warp]
