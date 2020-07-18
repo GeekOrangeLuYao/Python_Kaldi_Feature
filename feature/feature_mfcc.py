@@ -4,7 +4,7 @@ import logging
 
 from feature.feature_window import FrameExtractionOptions
 from feature.mel_computations import MelBanks, MelBanksOptions
-
+from matrix.matrix_functions import ComputeDctMatrix
 
 class MfccOptions(object):
     def __init__(self,
@@ -34,11 +34,13 @@ class MfccComputer(object):
                 f"num-ceps cannot be larger than num-mel-bins.  It should be smaller or equal. You provided num-ceps: {opts.num_ceps} and num-mel-bins: {num_bins}")
 
         dct_matrix = np.zeros((num_bins, num_bins))
-        # TODO: complete dct matrix
+        dct_matrix = ComputeDctMatrix(dct_matrix)
+        self.dct_matrix = dct_matrix[:opts.num_ceps, :num_bins]
+        
+        # TODO update cepstral_lifter
 
         # The data not used, should be used in the following functions
         self.lifter_coeffs = None
-        self.dct_matrix = None
         self.log_energy_floor = 0.0
         self.mel_banks = dict()
 

@@ -76,8 +76,7 @@ class WaveData(object):
 
     def copy_from(self, other):
         # Kaldi: WaveData::CopyFrom
-        self.samp_freq = other.samp_freq
-        self.data = np.copy(other.data)
+        raise NotImplementedError
 
     def clear(self):
         # Kaldi: WaveData::Clear
