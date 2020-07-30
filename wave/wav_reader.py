@@ -1,33 +1,66 @@
+import io
 import numpy as np
+
+from base.log_util import throw_boolean
+
+KWaveSampleMax = 32768.0
+
+@property
+def kWaveSampleMax():
+    return KWaveSampleMax
+
+
+class WaveHeaderReadGofer(object):
+    def __init__(self,
+                 istream,
+                 swap: bool = False,
+                 tag: str = "") -> None:
+        self.istream = istream
+        self.swap = swap
+        self.tag = tag
+
+    def Expect4ByteTag(self, expected: str) -> None:
+        actual = bytes.decode(self.istream.read(4))
+        throw_boolean(actual == expected, f"WaveData: expected {expected} , got {actual}")
+        self.tag = actual
+
+    def Read4ByteTag(self):
+        self.tag = bytes.decode(self.istream.read(4))
+
+    def ReadUint32(self):
+        result = self.istream.read(4)
+        if self.swap:
+            # TODO: check the function KALDI_SWAP4
+            pass
+        # TODO: let the result to a int
+        return result
+
+    def ReadUint16(self):
+        result = self.istream.read(2)
+        if self.swap:
+            pass
+        return result
+
+
+def WriteUint32(ostream, i):
+    ostream.write(i)
+
+def WriteUint16(ostream, i):
+    ostream.write(i)
+
 
 
 class WaveInfo(object):
-    # TODO: use wave or soundfile lib to get this instead of reading bytes
+
     def __init__(self,
                  samp_freq=0,
                  samp_count=0,
                  num_channels=0,
                  reverse_bytes=0) -> None:
-        self._samp_freq = samp_freq
-        self._samp_count = samp_count
-        self._num_channels = num_channels
-        self._reverse_bytes = reverse_bytes
-
-    @property
-    def samp_freq(self):
-        return self._samp_freq
-
-    @property
-    def samp_count(self):
-        return self._samp_count
-
-    @property
-    def num_channels(self):
-        return self._num_channels
-
-    @property
-    def reverse_bytes(self):
-        return self._reverse_bytes
+        self.samp_freq = samp_freq
+        self.samp_count = samp_count
+        self.num_channels = num_channels
+        self.reverse_bytes = reverse_bytes
 
     def is_streamed(self) -> bool:
         # Kaldi: WaveInfo::IsStreamed
@@ -45,8 +78,51 @@ class WaveInfo(object):
         # Kaldi: WaveInfo::DataBytes
         return self.samp_count * self.get_block_align()
 
-    def read(self):
-        raise NotImplementedError
+    def read(self, istream):
+        reader = WaveHeaderReadGofer(istream)
+        reader.Read4ByteTag()
+
+        if reader.tag == "RIFF":
+            self.reverse_bytes = False
+        elif reader.tag == "RIFX":
+            self.reverse_bytes = True
+        else:
+            raise RuntimeError(f"WaveData: expected RIFF or RIFX, got {reader.tag}")
+
+        reader.swap = self.reverse_bytes
+
+        riff_chunk_size = reader.ReadUint32()
+        reader.Expect4ByteTag("WAVE")
+        riff_chunk_read = 4
+
+        reader.Read4ByteTag()
+        riff_chunk_read += 4
+
+        while reader.tag == "fmt ":
+            filler_size = reader.ReadUint32()
+            riff_chunk_read += 4
+            for i in range(filler_size):
+                istream.get()
+
+            riff_chunk_read += filler_size
+            reader.Read4ByteTag()
+            riff_chunk_read += 4
+
+        assert reader.tag == "fmt "
+        subchunk1_size = reader.ReadUint32()
+        audio_format = reader.ReadUint16()
+        self.num_channels = reader.ReadUint16()
+
+        sample_rate = reader.ReadUint32()
+        byte_rate = reader.ReadUint32()
+        block_align = reader.ReadUint16()
+        bits_per_sample = reader.ReadUint16()
+
+        self.samp_freq = float(sample_rate)
+        fmt_chunk_read = 16
+
+        # TODO
+
 
 
 class WaveData(object):
