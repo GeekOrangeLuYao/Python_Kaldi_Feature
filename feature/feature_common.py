@@ -2,43 +2,33 @@ from typing import Union
 
 import numpy as np
 
-from feature.feature_fbank import FbankOptions, FbankComputer
-from feature.feature_mfcc import MfccOptions, MfccComputer
-from feature.feature_window import FeatureWindowFunction
+from feature.feature_fbank import FbankComputer, FbankOptions
+from feature.feature_mfcc import MfccComputer, MfccOptions
+from feature.feature_window import FeatureWindowFunction, compute_num_frames
 
-Options = Union[FbankOptions, MfccOptions]
+FeatureComputer = Union[FbankComputer, MfccComputer]
+FeatureOptions = Union[FbankOptions, MfccOptions]
 
 
-
-class OfflineFeature(object):
+class FeatureExtractor(object):
 
     def __init__(self,
-                 feature_computer_type,
-                 opts: Options,
-                 ) -> None:
-        self.feature_computer_type = feature_computer_type
-        self.opts = opts
-        self.computer = self._build_computer(feature_computer_type)
-        self.feature_windows_function = FeatureWindowFunction(self.computer.get_FrameOptions())
+                 opts: FeatureOptions,
+                 feature_computer: FeatureComputer):
+        self.feature_computer = feature_computer
+        self.window_function = FeatureWindowFunction(opts.get_frame_options())
 
-    def _build_computer(self, feature_computer_type):
-        if feature_computer_type == 'Mfcc':
-            return MfccComputer(self.opts)
-        elif feature_computer_type == 'Fbank':
-            return FbankComputer(self.opts)
-        else:
-            raise ValueError(f"{feature_computer_type} do not exist")
+    def compute_features(self,
+                         wave: np.ndarray,
+                         sample_freq, ) -> np.ndarray:
+        # TODO: use the downsample
+        assert sample_freq == self.feature_computer.get_frame_extraction_options().samp_freq
+        return self.compute(wave)
 
-    def Compute(self,
-                wave: np.ndarray,
-                vtln_warp) -> np.ndarray:
-        raise NotImplementedError
+    def compute(self, wave: np.ndarray) -> np.ndarray:
+        rows_out = compute_num_frames(wave.shape[0], self.feature_computer.get_frame_extraction_options())
+        cols_out = self.feature_computer.get_dim()
 
-    def ComputeFeatures(self,
-                        wave: np.ndarray,
-                        sample_freq,
-                        vtln_warp) -> np.ndarray:
-        raise NotImplementedError
+        if rows_out == 0:
+            return np.array([])
 
-    def get_dim(self):
-        return self.computer.get_dim()

@@ -1,3 +1,9 @@
+"""
+    Some basic matrix functions for matrix, we will use numpy more,
+
+"""
+
+
 import numpy as np
 from scipy.fftpack import dct
 

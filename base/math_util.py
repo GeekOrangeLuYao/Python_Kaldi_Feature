@@ -1,6 +1,6 @@
 # kaldi-math.cc
 
-def RoundUpToNearestPowerOfTwo(n):
+def round_up_to_nearest_power_of_two(n):
     # This function is to calc this:
     #  2 -> 2
     #  3 -> 4

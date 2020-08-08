@@ -1,3 +1,9 @@
+"""
+Read wav by python, this part will be realized but not used
+
+author: GeekOrangeLuyao
+"""
+
 import io
 import numpy as np
 
@@ -122,7 +128,7 @@ class WaveInfo(object):
         fmt_chunk_read = 16
 
         # TODO
-
+        raise NotImplementedError
 
 
 class WaveData(object):
