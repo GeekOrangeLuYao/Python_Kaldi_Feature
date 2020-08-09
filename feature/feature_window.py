@@ -3,6 +3,7 @@ import numpy as np
 
 from base.math_util import round_up_to_nearest_power_of_two
 from base.math_util import epsilon
+from feature.feature_config import OptionsParser
 
 
 class FrameExtractionOptions(object):
@@ -28,6 +29,18 @@ class FrameExtractionOptions(object):
         self.blackman_coeff = blackman_coeff
         self.snip_edges = snip_edges
         self.allow_downsample = allow_downsample
+
+    def register(self, option_parser: OptionsParser):
+        self.samp_freq = option_parser.get("samp_freq", 16000, type_function=np.int)
+        self.frame_shift = option_parser.get("frame_shift", 10.0, type_function=np.float)
+        self.frame_length = option_parser.get("frame_length", 25.0, type_function=np.float)
+        self.dither = option_parser.get("dither", 1.0, type_function=np.float)
+        self.preemph_coeff = option_parser.get("preemph_coeff", 0.97, type_function=np.float)
+        self.remove_dc_offset = option_parser.get("remove_dc_offset", True, type_function=np.bool)
+        self.window_type = option_parser.get("window_type", "povey", type_function=np.str)
+        self.blackman_coeff = option_parser.get("blackman_coeff", 0.42, type_function=np.float)
+        self.snip_edges = option_parser.get("snip_edges", True, type_function=np.bool)
+        self.allow_downsample = option_parser.get("allow_downsample", False, type_function=np.bool)
 
     def get_win_shift(self):
         return np.int(self.samp_freq * 0.001 * self.frame_shift)

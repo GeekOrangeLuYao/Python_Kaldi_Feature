@@ -2,6 +2,7 @@ from typing import List, Tuple
 import numpy as np
 
 from feature.feature_window import FrameExtractionOptions
+from feature.feature_config import OptionsParser
 
 
 def hz2mel(hz):
@@ -23,10 +24,15 @@ class MelBanksOptions(object):
     def __init__(self,
                  num_bins=25,
                  low_freq=20,
-                 high_freq=0):
+                 high_freq=7600):
         self.num_bins = num_bins
         self.low_freq = low_freq
         self.high_freq = high_freq
+
+    def register(self, option_parser: OptionsParser):
+        self.num_bins = option_parser.get("num_bins", 25, type_function=np.int)
+        self.low_freq = option_parser.get("low_freq", 20.0, type_function=np.float)
+        self.high_freq = option_parser.get("high_freq", 7600.0, type_function=np.float)
 
 
 class MelBanks(object):

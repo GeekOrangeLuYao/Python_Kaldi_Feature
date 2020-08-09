@@ -9,6 +9,7 @@ import logging
 
 from feature.feature_window import FrameExtractionOptions
 from feature.mel_computations import MelBanks, MelBanksOptions, compute_lifter_coeffs
+from feature.feature_config import OptionsParser
 from base.math_util import epsilon, numeric_limits_float_min
 from matrix.matrix_functions import compute_dct_matrix
 
@@ -25,6 +26,15 @@ class MfccOptions(object):
         self.energy_floor = 0.0
         self.raw_energy = True
         self.cepstral_lifter = 22.0
+
+    def register(self, option_parser: OptionsParser):
+        self.frame_opts.register(option_parser)
+        self.mel_opts.register(option_parser)
+        self.num_ceps = option_parser.get("num_ceps", 13, type_function=np.int)
+        self.use_energy = option_parser.get("use_energy", True, type_function=np.bool)
+        self.energy_floor = option_parser.get("energy_floor", 0.0, type_function=np.float)  # 0.0
+        self.raw_energy = option_parser.get("raw_energy", True, type_function=np.bool)
+        self.cepstral_lifter = option_parser.get("cepstral_lifter", 22.0, type_function=np.float)
 
     def get_frame_options(self):
         return self.frame_opts

@@ -7,6 +7,7 @@ import numpy as np
 
 from feature.feature_window import FrameExtractionOptions
 from feature.mel_computations import MelBanksOptions, MelBanks
+from feature.feature_config import OptionsParser
 from base.math_util import epsilon, numeric_limits_float_min
 
 
@@ -28,6 +29,16 @@ class FbankOptions(object):
         self.raw_energy = raw_energy
         self.use_log_fbank = use_log_fbank
         self.use_power = use_power
+
+    def register(self, option_parser: OptionsParser):
+        self.frame_opts.register(option_parser)
+        self.mel_opts.register(option_parser)
+
+        self.use_energy = option_parser.get("use_energy", False, type_function=np.bool)
+        self.energy_floor = option_parser.get("energy_floor", 0.0, type_function=np.float)
+        self.raw_energy = option_parser.get("raw_energy", True, type_function=np.bool)
+        self.use_log_fbank = option_parser.get("use_log_fbank", True, type_function=np.bool)
+        self.use_power = option_parser.get("use_power", True, type_function=np.bool)
 
     def get_frame_options(self):
         return self.frame_opts
