@@ -1,6 +1,8 @@
+from typing import Tuple
 import numpy as np
 
 from base.math_util import round_up_to_nearest_power_of_two
+from base.math_util import epsilon
 
 
 class FrameExtractionOptions(object):
@@ -103,3 +105,97 @@ def compute_num_frames(num_samples, opts: FrameExtractionOptions):
             num_frames -= 1
             end_sample_of_last_frame -= frame_shift
         return num_frames
+
+
+def dither(wave_form, dither_value):
+    if dither_value == 0.0:
+        return
+    dim = wave_form.shape[0]
+    wave_form += dither_value * np.random.rand(dim)
+
+    # TODO: check this function, especially the random function
+    return wave_form
+
+
+def preemphasize(wave_form: np.ndarray, preemph_coeff):
+    if preemph_coeff == 0.0:
+        return None
+    assert 0.0 <= preemph_coeff <= 1.0
+    i = wave_form.shape[0] - 1
+    while i > 0:
+        wave_form[i] -= preemph_coeff * wave_form[i - 1]
+        i -= 1
+    wave_form[0] -= preemph_coeff * wave_form[0]
+    return wave_form
+
+
+def process_window(opts: FrameExtractionOptions,
+                   window_function: FeatureWindowFunction,
+                   window: np.ndarray,
+                   log_energy_pre_window):
+    # dither -> remove_dc_offset -> preemph
+    frame_length = opts.get_win_size()
+
+    # TODO: use dither
+    # if opts.dither != 0.0:
+
+    if opts.remove_dc_offset:
+        window -= np.sum(window) / frame_length
+
+    if log_energy_pre_window is not None:
+        energy = np.max(np.dot(window, window), epsilon())
+        log_energy_pre_window = np.log(energy)
+
+    if opts.preemph_coeff != 0.0:
+        window = preemphasize(window, opts.preemph_coeff)
+
+    window = window * window_function.window
+    return window, log_energy_pre_window
+
+
+def extract_window(sample_offset,
+                   wave: np.ndarray,
+                   f,
+                   opts: FrameExtractionOptions,
+                   window_function: FeatureWindowFunction,
+                   log_energy_pre_window):  # return window
+    assert sample_offset >= 0 and wave.shape[0] != 0
+
+    frame_length = opts.get_win_size()
+    frame_length_padded = opts.get_padded_window_size()
+    num_samples = sample_offset + wave.shape[0]
+    start_sample = first_sample_of_frame(f, opts)
+    end_sample = start_sample + frame_length
+
+    if opts.snip_edges:
+        assert start_sample >= sample_offset and end_sample <= num_samples
+    else:
+        assert sample_offset == 0 or start_sample >= sample_offset
+
+    wave_start = np.int(start_sample - sample_offset)
+    wave_end = wave_start + frame_length
+
+    window = np.zeros((frame_length_padded,))
+    if wave_start >= 0 and wave_end <= wave.shape[0]:
+        window[:frame_length] = np.copy(wave[wave_start: wave_end])
+    else:
+        wave_dim = wave.shape[0]
+        for s in range(frame_length):
+            s_in_wave = s + wave_start
+
+            while s_in_wave < 0 or s_in_wave >= wave_dim:
+                if s_in_wave < 0:
+                    s_in_wave = - s_in_wave - 1
+                else:
+                    s_in_wave = 2 * wave_dim - 1 - s_in_wave
+            window[s] = wave[s_in_wave]
+
+    if frame_length_padded > frame_length:
+        window[frame_length: frame_length_padded] = 0.0
+
+    window[:frame_length], log_energy_pre_window = process_window(opts,
+                                                                  window_function,
+                                                                  window[:frame_length],
+                                                                  log_energy_pre_window)
+
+    return window, log_energy_pre_window

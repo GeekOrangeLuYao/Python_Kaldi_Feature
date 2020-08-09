@@ -11,10 +11,6 @@ from base.log_util import throw_boolean
 
 KWaveSampleMax = 32768.0
 
-@property
-def kWaveSampleMax():
-    return KWaveSampleMax
-
 
 class WaveHeaderReadGofer(object):
     def __init__(self,
@@ -51,9 +47,9 @@ class WaveHeaderReadGofer(object):
 def WriteUint32(ostream, i):
     ostream.write(i)
 
+
 def WriteUint16(ostream, i):
     ostream.write(i)
-
 
 
 class WaveInfo(object):

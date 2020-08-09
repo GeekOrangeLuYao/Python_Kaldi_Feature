@@ -1,5 +1,13 @@
 # kaldi-math.cc
 
+def epsilon():
+    return 1e-8
+
+
+def numeric_limits_float_min():
+    return 1e-38
+
+
 def round_up_to_nearest_power_of_two(n):
     # This function is to calc this:
     #  2 -> 2
@@ -18,10 +26,9 @@ def round_up_to_nearest_power_of_two(n):
     return n + 1
 
 
-
 def main():
     n = 65
-    print(RoundUpToNearestPowerOfTwo(n))
+    print(round_up_to_nearest_power_of_two(n))
 
 
 if __name__ == '__main__':

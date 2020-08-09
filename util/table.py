@@ -1,5 +1,3 @@
-
-
 class SequentialTableReader(object):
 
     def __init__(self,
@@ -9,7 +7,7 @@ class SequentialTableReader(object):
         self.scp_file = scp_file
         self.holder = holder
         self.scp_dict = dict()
-        self.index_keys = self.scp_dict.keys()
+        self.index_keys = list(self.scp_dict.keys())
 
         self._open()
 
@@ -29,7 +27,7 @@ class SequentialTableReader(object):
 
     def __getitem__(self, item):
         if isinstance(item, int):
-            assert item >= 0 and item < len(self), f"Wrong range to index"
+            assert 0 <= item < len(self), f"Wrong range to index"
             return self.scp_dict[self.index_keys[item]]
         elif isinstance(item, str):
             return self.scp_dict[item]
@@ -38,10 +36,8 @@ class SequentialTableReader(object):
 
     def __iter__(self):
         for (key, value) in self.scp_dict:
-            # TDDO: use holder here
+            # TODO: use holder here
             yield key, self.holder(value).value()
 
     def __repr__(self):
         return f"scp_file = {self.scp_file}, holder = {repr(self.holder)}"
-
-

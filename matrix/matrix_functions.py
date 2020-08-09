@@ -3,12 +3,13 @@
 
 """
 
-
 import numpy as np
 from scipy.fftpack import dct
 
-def ComputeDctMatrix(M: np.ndarray):
+
+def compute_dct_matrix(M: np.ndarray):
     # realization DCT Matrix
+    # TODO: test the difference between this function and scipy.fftpack.dct
     K = M.shape[0]
     N = M.shape[1]
 
@@ -26,12 +27,10 @@ def ComputeDctMatrix(M: np.ndarray):
     return M
 
 
-
-
 def main():
     num_bins = 13
     M = np.zeros((num_bins, num_bins))
-    M1 = ComputeDctMatrix(M.copy())
+    M1 = compute_dct_matrix(M.copy())
     # M2 = dct(M.copy())
 
     print(M1)
