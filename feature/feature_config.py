@@ -18,7 +18,8 @@ class OptionsParser(object):
         config.read(conf_file)
 
         assert conf_section in config
-        # TODO: read config parser
+        for key in config[conf_section]:
+            self.config_dict[key] = config[conf_section][key]
 
     def get(self,
             item,

@@ -14,8 +14,8 @@ from base.math_util import epsilon, numeric_limits_float_min
 class FbankOptions(object):
 
     def __init__(self,
-                 frame_opts: FrameExtractionOptions,
-                 mel_opts: MelBanksOptions,
+                 frame_opts: FrameExtractionOptions = None,
+                 mel_opts: MelBanksOptions = None,
                  use_energy=False,
                  energy_floor=0.0,
                  raw_energy=True,

@@ -1,5 +1,5 @@
 """
-Read wav by python, this part will be realized but not used
+Read wav by python, this part will be realized but not used. Abandon it
 
 author: GeekOrangeLuyao
 """

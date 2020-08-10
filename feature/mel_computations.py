@@ -37,8 +37,8 @@ class MelBanksOptions(object):
 
 class MelBanks(object):
     def __init__(self,
-                 opts: MelBanksOptions,
-                 frame_opts: FrameExtractionOptions):
+                 opts: MelBanksOptions = None,
+                 frame_opts: FrameExtractionOptions = None):
         # data domain:
         # center_freqs
         # bins

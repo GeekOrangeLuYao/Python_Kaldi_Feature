@@ -5,8 +5,6 @@
 
 import numpy as np
 
-import logging
-
 from feature.feature_window import FrameExtractionOptions
 from feature.mel_computations import MelBanks, MelBanksOptions, compute_lifter_coeffs
 from feature.feature_config import OptionsParser
@@ -16,7 +14,7 @@ from matrix.matrix_functions import compute_dct_matrix
 
 class MfccOptions(object):
     def __init__(self,
-                 frame_opts: FrameExtractionOptions,
+                 frame_opts: FrameExtractionOptions = None,
                  mel_opts: MelBanksOptions = MelBanksOptions(num_bins=23)) -> None:
         self.frame_opts = frame_opts
         self.mel_opts = mel_opts
@@ -30,6 +28,7 @@ class MfccOptions(object):
     def register(self, option_parser: OptionsParser):
         self.frame_opts.register(option_parser)
         self.mel_opts.register(option_parser)
+
         self.num_ceps = option_parser.get("num_ceps", 13, type_function=np.int)
         self.use_energy = option_parser.get("use_energy", True, type_function=np.bool)
         self.energy_floor = option_parser.get("energy_floor", 0.0, type_function=np.float)  # 0.0
