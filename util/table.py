@@ -1,4 +1,15 @@
 """
+    In this project, we just want to use this to read the following:
+        * feats.scp -> feature/feature_reader.py
+        * wav.scp
+    and write the following:
+        * feats.ark -> feature/feature_writer.py
+        * feats.scp -> feature/feature_writer.py
+    Actually, the file should read the files in Kaldi like: xvectors.scp, vad.scp and so on.
+
+    The module do not support the pipe data as we do not use the subprocess lib in python
+    We will support the subprocess after finishing the feature-extractor which is more important
+    # TODO: Add pipe_or_file data
 
 """
 from typing import Union, Dict
@@ -41,7 +52,6 @@ def parse_scp(scp_path,
 
 
 class SequentialTableReader(object):
-
     def __init__(self, rspecifier):
         assert rspecifier != "" and os.path.isfile(
             rspecifier), f"Error constructing TableReader: rspecifier is {rspecifier}"
