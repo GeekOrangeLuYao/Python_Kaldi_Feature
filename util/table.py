@@ -12,7 +12,7 @@
     # TODO: Add pipe_or_file data
 
 """
-from typing import Union, Dict
+from typing import Union, Dict, Callable
 import os
 
 from util.holder import WavHolder, SimpleTextHolder
@@ -52,34 +52,68 @@ def parse_scp(scp_path,
 
 
 class SequentialTableReader(object):
-    def __init__(self, rspecifier):
-        assert rspecifier != "" and os.path.isfile(
-            rspecifier), f"Error constructing TableReader: rspecifier is {rspecifier}"
+    def __init__(self, rspecifier, holder: Callable):
+        assert rspecifier != ""
+        if not os.path.isfile(rspecifier):
+            raise RuntimeError(f"Error constructing TableReader: rspecifier is {rspecifier}")
         self.rspecifier = rspecifier
-
-    def __len__(self):
-        raise NotImplementedError
-
-    def __iter__(self):
-        raise NotImplementedError
-
-
-class SequentialTableArchiveReader(SequentialTableReader):
-    def __init__(self, rspecifier, holder: Holder):
-        super(SequentialTableArchiveReader, self).__init__(rspecifier)
         self.holder = holder
+        self.scp_dict = dict()
+        self.index_keys = list()
 
-
-class SequentialTableScriptReader(SequentialTableReader):
-    def __init__(self, rspecifier, holder: Holder):
-        super(SequentialTableScriptReader, self).__init__(rspecifier)
-        self.holder = holder
-
-        self.scp_dict = parse_scp(rspecifier, )
+    def _load(self, index):
+        return self.holder(index)
 
     def __len__(self):
         return len(self.scp_dict)
 
     def __iter__(self):
         for key, value in self.scp_dict.items():
-            yield key, self.holder(value)
+            yield key, self._load(value)
+
+    def __contains__(self, item):
+        return item in self.scp_dict
+
+    def __getitem__(self, index):
+        if len(self.index_keys) != len(self.scp_dict):
+            self.index_keys = list(self.scp_dict.keys())
+
+        if type(index) not in [int, str]:
+            raise IndexError(f"Unsupported index type: {type(index)}")
+        elif type(index) == int:
+            if 0 <= index < len(self.scp_dict):
+                index = self.index_keys[index]
+            else:
+                raise KeyError(f"Integer index out of range, {index} vs {len(self.scp_dict)}")
+        elif type(index) == str:
+            if index not in self.index_keys:
+                raise KeyError(f"Missing key {index}")
+        return self._load(index)
+
+
+class SequentialTableArchiveReader(SequentialTableReader):
+    """
+        ArchiveReader Only for .ark:offset format
+    """
+
+    def __init__(self, rspecifier, holder: Holder):
+        super(SequentialTableArchiveReader, self).__init__(rspecifier, holder)
+
+
+class SequentialTableScriptReader(SequentialTableReader):
+    """
+        ScriptReader for other situations
+    """
+
+    def __init__(self, rspecifier, holder: Holder):
+        super(SequentialTableScriptReader, self).__init__(rspecifier, holder)
+
+        self.scp_dict = parse_scp(rspecifier)
+
+
+class SequentialTableWriter(object):
+    def __init__(self, wspecifier, holder: Callable):
+        assert wspecifier != ""
+        if not os.path.isfile(wspecifier):
+            raise RuntimeError(f"Error constructing TableReader: wspecifier is {wspecifier}")
+        self.wspecifier = wspecifier
