@@ -1,9 +1,10 @@
 import argparse
 import logging
 
-from feature.feature_mfcc import MfccOptions
 from feature.feature_common import FeatureExtractor
 from feature.feature_config import OptionsParser
+from feature.feature_writer import FeatureWriter
+from audio.wav_reader import WavReader
 
 parser = argparse.ArgumentParser(description="The tool to compute the mfcc")
 parser.add_argument("--data_path",
@@ -25,10 +26,16 @@ def main(args):
     config_file = args.config_file
     config_section = args.config_section
 
+    wav_reader = WavReader(data_path)
     option_parser = OptionsParser(conf_file=config_file, conf_section=config_section)
     feature_extractor = FeatureExtractor(feature_type="mfcc", option_parser=option_parser)
+    feature_writer = FeatureWriter(save_path, split_num=1)
 
-
+    for utt_id, (wav, sample_rate) in wav_reader:
+        result = feature_extractor.compute_features(wav, sample_rate)
+        print(f"utt_id = {utt_id}, result.shape = {result.shape}")
+        feature_writer.write(utt_id, result)
+    feature_writer.flush()
 
 
 if __name__ == "__main__":

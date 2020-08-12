@@ -21,24 +21,17 @@ class FeatureReader(object):
         # define script_processor function
         self.script_processor = ScriptProcessor(scp_path=feats_scp)
         # define holder function
-        self.holder = MatrixHolder()
-        self.feature_reader = SequentialTableReader(read_specifier=feats_scp,
-                                                    holder=self.holder,
-                                                    scp_processor=self.script_processor)
+        self.holder = MatrixHolder(mode="rb")
+        self.reader = SequentialTableReader(read_specifier=feats_scp,
+                                            holder=self.holder,
+                                            scp_processor=self.script_processor)
 
     def __len__(self):
-        return len(self.feature_reader)
+        return len(self.reader)
 
     def __iter__(self):
-        for key, value in self.feature_reader:
+        for key, value in self.reader:
             yield key, value
 
-
-def main():
-    feats_scp_file = ""
-
-    return
-
-
-if __name__ == '__main__':
-    main()
+    def __del__(self):
+        del self.holder

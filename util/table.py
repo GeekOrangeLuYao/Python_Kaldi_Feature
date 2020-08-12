@@ -14,32 +14,32 @@
 """
 from typing import Union, Dict, Callable
 import os
+import numpy as np
 
-from util.holder import WavHolder, SimpleTextHolder
+from util.holder import WavHolder, SimpleTextHolder, MatrixHolder
 
-Holder = Union[WavHolder, SimpleTextHolder]
+Holder = Union[WavHolder, SimpleTextHolder, MatrixHolder]
 
 __all__ = [
     "SequentialTableReader",  # "SequentialTableScriptReader", "SequentialTableArchiveReader"
-    "SequentialTableWriter",  # ""
 ]
 
 
 class SequentialTableReader(object):
     def __init__(self,
                  read_specifier,
-                 holder: Callable,
+                 holder: Holder,
                  scp_processor):
         assert read_specifier != ""
         if not os.path.isfile(read_specifier):
             raise RuntimeError(f"Error constructing TableReader: read_specifier is {read_specifier}")
         self.read_specifier = read_specifier
         self.holder = holder
-        self.scp_dict = dict(scp_processor) # (self.read_specifier)
+        self.scp_dict = dict(scp_processor)  # (self.read_specifier)
         self.index_keys = list()
 
     def _load(self, index):
-        return self.holder(index)
+        return self.holder.read(index)
 
     def __len__(self):
         return len(self.scp_dict)
@@ -84,11 +84,3 @@ class SequentialTableReader(object):
 #
 #     def __init__(self, rspecifier, holder: Holder):
 #         super(SequentialTableScriptReader, self).__init__(rspecifier, holder)
-
-
-class SequentialTableWriter(object):
-    def __init__(self, write_specifier, holder: Callable):
-        assert write_specifier != ""
-        if not os.path.isfile(write_specifier):
-            raise RuntimeError(f"Error constructing TableReader: write_specifier is {write_specifier}")
-        self.write_specifier = write_specifier

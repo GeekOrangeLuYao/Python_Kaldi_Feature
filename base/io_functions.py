@@ -31,6 +31,10 @@ def write_token(fd, token):
     fd.write(str.encode(token + " "))
 
 
+def write_binary_symbol(fd):
+    fd.write(str.encode('\0B'))
+
+
 def read_int32(fd):
     int_size = bytes.decode(fd.read(1))
     throw_on_error(int_size == '\04', f"Expert '\\04', but gets {int_size}")
