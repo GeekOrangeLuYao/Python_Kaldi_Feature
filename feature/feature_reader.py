@@ -9,17 +9,29 @@ Warning:
     it will cause runtime error!)
 """
 
+from util.table import SequentialTableReader
+from util.holder import MatrixHolder
+from util.processor import ScriptProcessor
 
-class FeatureReader():
 
-    def __init__(self):
-        pass
+class FeatureReader(object):
+
+    def __init__(self, feats_scp):
+        self.feats_scp = feats_scp
+        # define script_processor function
+        self.script_processor = ScriptProcessor(scp_path=feats_scp)
+        # define holder function
+        self.holder = MatrixHolder()
+        self.feature_reader = SequentialTableReader(read_specifier=feats_scp,
+                                                    holder=self.holder,
+                                                    scp_processor=self.script_processor)
 
     def __len__(self):
-        raise NotImplementedError
+        return len(self.feature_reader)
 
     def __iter__(self):
-        raise NotImplementedError
+        for key, value in self.feature_reader:
+            yield key, value
 
 
 def main():

@@ -20,45 +20,22 @@ from util.holder import WavHolder, SimpleTextHolder
 Holder = Union[WavHolder, SimpleTextHolder]
 
 __all__ = [
-    "SequentialTableReader", "SequentialTableScriptReader", "SequentialTableArchiveReader"
+    "SequentialTableReader",  # "SequentialTableScriptReader", "SequentialTableArchiveReader"
+    "SequentialTableWriter",  # ""
 ]
 
 
-def parse_scp(scp_path,
-              value_processor=lambda x: x,
-              num_tokens=2,
-              restrict=True) -> Dict:
-    scp_dict = dict()
-    line = 0
-
-    with open(scp_path, "r") as f:
-        for raw_line in f:
-            scp_tokens = raw_line.strip().split()
-            line += 1
-            if scp_tokens[-1] == "|":
-                key, value = scp_tokens[0], " ".join(scp_tokens[1:])
-            else:
-                token_len = len(scp_tokens)
-                if num_tokens >= 2 and token_len != num_tokens or restrict and token_len < 2:
-                    raise RuntimeError(f"For {scp_path}, format error in line[{line:d}]: {raw_line}")
-                if num_tokens == 2:
-                    key, value = scp_tokens
-                else:
-                    key, value = scp_tokens[0], scp_tokens[1:]
-            if key in scp_dict:
-                raise ValueError(f"Duplicate key {key} exists in {scp_path}")
-            scp_dict[key] = value_processor(value)
-    return scp_dict
-
-
 class SequentialTableReader(object):
-    def __init__(self, rspecifier, holder: Callable):
-        assert rspecifier != ""
-        if not os.path.isfile(rspecifier):
-            raise RuntimeError(f"Error constructing TableReader: rspecifier is {rspecifier}")
-        self.rspecifier = rspecifier
+    def __init__(self,
+                 read_specifier,
+                 holder: Callable,
+                 scp_processor):
+        assert read_specifier != ""
+        if not os.path.isfile(read_specifier):
+            raise RuntimeError(f"Error constructing TableReader: read_specifier is {read_specifier}")
+        self.read_specifier = read_specifier
         self.holder = holder
-        self.scp_dict = dict()
+        self.scp_dict = scp_processor(self.read_specifier)
         self.index_keys = list()
 
     def _load(self, index):
@@ -91,29 +68,27 @@ class SequentialTableReader(object):
         return self._load(index)
 
 
-class SequentialTableArchiveReader(SequentialTableReader):
-    """
-        ArchiveReader Only for .ark:offset format
-    """
-
-    def __init__(self, rspecifier, holder: Holder):
-        super(SequentialTableArchiveReader, self).__init__(rspecifier, holder)
-
-
-class SequentialTableScriptReader(SequentialTableReader):
-    """
-        ScriptReader for other situations
-    """
-
-    def __init__(self, rspecifier, holder: Holder):
-        super(SequentialTableScriptReader, self).__init__(rspecifier, holder)
-
-        self.scp_dict = parse_scp(rspecifier)
+# class SequentialTableArchiveReader(SequentialTableReader):
+#     """
+#         ArchiveReader Only for .ark:offset format
+#     """
+#
+#     def __init__(self, rspecifier, holder: Holder):
+#         super(SequentialTableArchiveReader, self).__init__(rspecifier, holder)
+#
+#
+# class SequentialTableScriptReader(SequentialTableReader):
+#     """
+#         ScriptReader for other situations
+#     """
+#
+#     def __init__(self, rspecifier, holder: Holder):
+#         super(SequentialTableScriptReader, self).__init__(rspecifier, holder)
 
 
 class SequentialTableWriter(object):
-    def __init__(self, wspecifier, holder: Callable):
-        assert wspecifier != ""
-        if not os.path.isfile(wspecifier):
-            raise RuntimeError(f"Error constructing TableReader: wspecifier is {wspecifier}")
-        self.wspecifier = wspecifier
+    def __init__(self, write_specifier, holder: Callable):
+        assert write_specifier != ""
+        if not os.path.isfile(write_specifier):
+            raise RuntimeError(f"Error constructing TableReader: write_specifier is {write_specifier}")
+        self.write_specifier = write_specifier
