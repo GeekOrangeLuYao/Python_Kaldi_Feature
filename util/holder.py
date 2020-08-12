@@ -42,7 +42,10 @@ class MatrixHolder(object):
         ark_handler.seek(addr)
         return ark_handler
 
-    def __call__(self, value) -> np.ndarray:
+    def __call__(self, script) -> np.ndarray:
+        value = script.split(":")
+        if len(value) == 1:
+            raise ValueError(f"Unsupported scripts address format {script}")
         path, offset = ":".join(value[0:-1]), int(value[-1])
         fd = self._open(path, offset)
         return read_float_mat_vec(fd, direct_access=True)

@@ -10,6 +10,9 @@ class ScriptProcessor(object):
         self.scp_path = scp_path
         self.parse_scp(**kwargs)
 
+    def __dict__(self):
+        return self.scp_dict
+
     def __len__(self):
         return len(self.scp_dict)
 

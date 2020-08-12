@@ -35,7 +35,7 @@ class SequentialTableReader(object):
             raise RuntimeError(f"Error constructing TableReader: read_specifier is {read_specifier}")
         self.read_specifier = read_specifier
         self.holder = holder
-        self.scp_dict = scp_processor(self.read_specifier)
+        self.scp_dict = dict(scp_processor) # (self.read_specifier)
         self.index_keys = list()
 
     def _load(self, index):
