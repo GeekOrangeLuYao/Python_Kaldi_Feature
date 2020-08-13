@@ -30,7 +30,7 @@ class MelBanksOptions(object):
         self.high_freq = high_freq
 
     def register(self, option_parser: OptionsParser):
-        self.num_bins = option_parser.get("num_bins", 25, type_function=np.int)
+        self.num_bins = option_parser.get("num_mel_bins", 25, type_function=np.int)
         self.low_freq = option_parser.get("low_freq", 20.0, type_function=np.float)
         self.high_freq = option_parser.get("high_freq", 7600.0, type_function=np.float)
 
@@ -48,7 +48,7 @@ class MelBanks(object):
         window_length_padded = frame_opts.get_padded_window_size()
 
         assert window_length_padded % 2 == 0  # I think this is unnecessary
-        num_fft_bins = window_length_padded / 2
+        num_fft_bins = window_length_padded // 2
 
         nyquist = 0.5 * sample_freq  # nyquist theory
         low_freq = opts.low_freq
@@ -100,6 +100,6 @@ class MelBanks(object):
         for i in range(num_bins):
             offset = self.bins[i][0]
             v = self.bins[i][1]
-            mel_energies_out[i] = np.dot(v, power_spectrum[offset:])
+            mel_energies_out[i] = np.dot(v, power_spectrum[offset: offset + v.shape[0]])
 
         return mel_energies_out

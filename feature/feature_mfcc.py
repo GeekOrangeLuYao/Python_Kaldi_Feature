@@ -16,8 +16,8 @@ class MfccOptions(object):
     def __init__(self,
                  frame_opts: FrameExtractionOptions = None,
                  mel_opts: MelBanksOptions = MelBanksOptions(num_bins=23)) -> None:
-        self.frame_opts = frame_opts
-        self.mel_opts = mel_opts
+        self.frame_opts = frame_opts if frame_opts is not None else FrameExtractionOptions()
+        self.mel_opts = mel_opts if mel_opts is not None else MelBanksOptions()
 
         self.num_ceps = 13
         self.use_energy = True
@@ -83,7 +83,7 @@ class MfccComputer(object):
         power_spectrum = signal_frame[:signal_frame_dim // 2 + 1]
 
         mel_energies = mel_banks.compute(power_spectrum)
-        mel_energies = np.max(mel_energies, epsilon())
+        mel_energies = np.maximum(mel_energies, epsilon())
         mel_energies = np.log(mel_energies)
 
         feature = np.matmul(self.dct_matrix, mel_energies)
@@ -108,3 +108,6 @@ class MfccComputer(object):
 
     def dim(self):
         return self.opts.num_ceps
+
+    def get_frame_extraction_options(self):
+        return self.opts.get_frame_options()

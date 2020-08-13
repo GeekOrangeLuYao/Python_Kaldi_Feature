@@ -156,7 +156,7 @@ def process_window(opts: FrameExtractionOptions,
         window -= np.sum(window) / frame_length
 
     if log_energy_pre_window is not None:
-        energy = np.max(np.dot(window, window), epsilon())
+        energy = np.maximum(np.dot(window, window), epsilon())
         log_energy_pre_window = np.log(energy)
 
     if opts.preemph_coeff != 0.0:
