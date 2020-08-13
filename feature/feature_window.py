@@ -100,9 +100,10 @@ def first_sample_of_frame(frame, opts: FrameExtractionOptions):
         return beginning_of_frame
 
 
-def compute_num_frames(num_samples, opts: FrameExtractionOptions):
+def compute_num_frames(num_samples, opts: FrameExtractionOptions, flush = True):
     frame_shift = opts.get_win_shift()
     frame_length = opts.get_win_size()
+    print(f"frame_shift: {frame_shift}, frame_length: {frame_length} opts.snip_edges: {opts.snip_edges}")
 
     if opts.snip_edges:
         if num_samples < frame_length:
@@ -111,6 +112,10 @@ def compute_num_frames(num_samples, opts: FrameExtractionOptions):
             return 1 + ((num_samples - frame_length) // frame_shift)
     else:
         num_frames = (num_samples + (frame_shift // 2)) // frame_shift
+        print(f"num_frames = {num_frames}, num_samples = {num_samples}, frame_shift = {frame_shift}")
+        if flush:
+            return num_frames
+
         end_sample_of_last_frame = first_sample_of_frame(num_frames - 1, opts) + frame_length
 
         while num_frames > 0 and end_sample_of_last_frame > num_samples:

@@ -49,6 +49,7 @@ class FeatureExtractor(object):
     def compute(self, wave: np.ndarray) -> np.ndarray:
         rows_out = compute_num_frames(wave.shape[0], self.feature_computer.get_frame_extraction_options())
         cols_out = self.feature_computer.dim()
+        print(f"shape = {wave.shape[0]}, rows_out = {rows_out}")
 
         if rows_out == 0:
             return np.array([])

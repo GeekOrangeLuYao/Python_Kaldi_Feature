@@ -4,6 +4,8 @@
 import os
 import configparser as cfp
 
+import numpy as np
+
 
 class OptionsParser(object):
 
@@ -26,4 +28,7 @@ class OptionsParser(object):
             item,
             default_value,
             type_function):
-        return type_function(self.config_dict.get(item, default_value))
+        if type_function == np.bool:
+            return self.config_dict.get(item, default_value) == "True"
+        else:
+            return type_function(self.config_dict.get(item, default_value))
