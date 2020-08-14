@@ -25,6 +25,7 @@ class WavHolder(object):
         if not os.path.isfile(item):
             raise ValueError(f"File {item} do not exist")
         wave, sample_rate = sf.read(item)
+        wave *= (1 << 15)
         return wave, sample_rate
 
     def write(self, item):

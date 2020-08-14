@@ -67,6 +67,7 @@ class FeatureExtractor(object):
                                                         self.feature_computer.get_frame_extraction_options(),
                                                         self.window_function, None)
                 raw_log_energy = 0.0
+            # print(f"raw_log_energy: {raw_log_energy}")
 
             output[r, :] = self.feature_computer.compute(raw_log_energy, window)
         return output

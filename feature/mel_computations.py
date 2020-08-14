@@ -91,7 +91,7 @@ class MelBanks(object):
                     last_index = i
 
             assert first_index != -1 and last_index >= first_index, "You may have set --num-mel-bins too large"
-            self.bins.append((first_index, np.copy(this_bin[first_index: last_index])))
+            self.bins.append((first_index, np.copy(this_bin[first_index: last_index + 1])))
 
     def compute(self, power_spectrum: np.ndarray) -> np.ndarray:
         num_bins = len(self.bins)
@@ -101,5 +101,6 @@ class MelBanks(object):
             offset = self.bins[i][0]
             v = self.bins[i][1]
             mel_energies_out[i] = np.dot(v, power_spectrum[offset: offset + v.shape[0]])
+            # print(f"mel-banks compute {i}: offset: {offset}, v.dim: {v.shape[0]}, mel_energies_out: {mel_energies_out[i]} v:\n{v}")
 
         return mel_energies_out

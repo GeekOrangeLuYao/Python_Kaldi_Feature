@@ -32,6 +32,7 @@ def main(args):
     feature_writer = FeatureWriter(save_path, split_num=1)
 
     for utt_id, (wav, sample_rate) in wav_reader:
+        # print(f"waveform:\n{wav}\n")
         result = feature_extractor.compute_features(wav, sample_rate)
         print(f"utt_id = {utt_id}, result.shape = {result.shape}")
         feature_writer.write(utt_id, result)

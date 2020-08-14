@@ -21,7 +21,7 @@ def compute_dct_matrix(M: np.ndarray):
         M[0, j] = normalizer
 
     normalizer = np.sqrt(2.0 / N)
-    for k in range(K):
+    for k in range(1, K):
         for n in range(N):
             M[k, n] = normalizer * np.cos(np.pi / N * (n + 0.5) * k)
     return M

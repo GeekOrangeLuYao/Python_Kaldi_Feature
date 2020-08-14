@@ -36,11 +36,11 @@ class FrameExtractionOptions(object):
         self.frame_length = option_parser.get("frame_length", 25.0, type_function=np.float)
         self.dither = option_parser.get("dither", 1.0, type_function=np.float)
         self.preemph_coeff = option_parser.get("preemph_coeff", 0.97, type_function=np.float)
-        self.remove_dc_offset = option_parser.get("remove_dc_offset", True, type_function=np.bool)
+        self.remove_dc_offset = option_parser.get("remove_dc_offset", "True", type_function=np.bool)
         self.window_type = option_parser.get("window_type", "povey", type_function=np.str)
         self.blackman_coeff = option_parser.get("blackman_coeff", 0.42, type_function=np.float)
         self.snip_edges = option_parser.get("snip_edges", True, type_function=np.bool)
-        self.allow_downsample = option_parser.get("allow_downsample", False, type_function=np.bool)
+        self.allow_downsample = option_parser.get("allow_downsample", "False", type_function=np.bool)
 
     def get_win_shift(self):
         return np.int(self.samp_freq * 0.001 * self.frame_shift)
@@ -158,7 +158,9 @@ def process_window(opts: FrameExtractionOptions,
     # if opts.dither != 0.0:
 
     if opts.remove_dc_offset:
+        # print(f"remove_dc_offset: {np.sum(window)} frame_length: {frame_length} add_value: {(-np.sum(window) / frame_length)}")
         window -= np.sum(window) / frame_length
+    # print(f"after remove_dc_offset window:\n{window}")
 
     if log_energy_pre_window is not None:
         energy = np.maximum(np.dot(window, window), epsilon())
@@ -166,8 +168,10 @@ def process_window(opts: FrameExtractionOptions,
 
     if opts.preemph_coeff != 0.0:
         window = preemphasize(window, opts.preemph_coeff)
+    # print(f"after preemph window:\n{window}")
 
     window = window * window_function.window
+    # print(f"after window_function:\n{window}")
     return window, log_energy_pre_window
 
 

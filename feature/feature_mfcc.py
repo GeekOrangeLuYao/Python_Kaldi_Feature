@@ -30,9 +30,9 @@ class MfccOptions(object):
         self.mel_opts.register(option_parser)
 
         self.num_ceps = option_parser.get("num_ceps", 13, type_function=np.int)
-        self.use_energy = option_parser.get("use_energy", True, type_function=np.bool)
+        self.use_energy = option_parser.get("use_energy", "True", type_function=np.bool)
         self.energy_floor = option_parser.get("energy_floor", 0.0, type_function=np.float)  # 0.0
-        self.raw_energy = option_parser.get("raw_energy", True, type_function=np.bool)
+        self.raw_energy = option_parser.get("raw_energy", "True", type_function=np.bool)
         self.cepstral_lifter = option_parser.get("cepstral_lifter", 22.0, type_function=np.float)
 
     def get_frame_options(self):
@@ -81,21 +81,27 @@ class MfccComputer(object):
 
         signal_frame_dim = signal_frame.shape[0]
         power_spectrum = signal_frame[:signal_frame_dim // 2 + 1]
+        print(f"power_spectrum: \n{power_spectrum}")
 
         mel_energies = mel_banks.compute(power_spectrum)
         mel_energies = np.maximum(mel_energies, epsilon())
         mel_energies = np.log(mel_energies)
+        print(f"mel_energies: {mel_energies}")
 
         feature = np.matmul(self.dct_matrix, mel_energies)
+        print(f"feature:\n {feature}")
 
         if self.opts.cepstral_lifter != 0.0:
             feature = feature * self.lifter_coeffs
+        print(f"after cepstral_lifter feature:\n{feature}")
 
         if self.opts.use_energy:
             if self.opts.energy_floor > 0.0 and signal_log_energy < self.log_energy_floor:
                 signal_log_energy = self.log_energy_floor
-            feature[0] *= signal_log_energy
+            print(f"signal_log_energy: {signal_log_energy}")
+            feature[0] = signal_log_energy
 
+        print(f"final feature:\n{feature}")
         return feature
 
     def get_mel_banks(self) -> MelBanks:
