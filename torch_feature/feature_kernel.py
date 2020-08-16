@@ -30,7 +30,7 @@ class Window(nn.Module):
 class StftFeature(nn.Module):
     def __init__(self,
                  opts: FrameExtractionOptions,
-                 requires_grad = False):
+                 requires_grad=False):
         super(StftFeature, self).__init__()
         self.opts = opts
 
@@ -88,7 +88,8 @@ class MfccFeature(nn.Module):
         num_bins = opts.mel_opts.num_bins
         dct_matrix = np.zeros((num_bins, num_bins))
         dct_matrix = compute_dct_matrix(dct_matrix)
-        self.dct_matrix = nn.Parameter(torch.from_numpy(dct_matrix[:opts.num_ceps, :num_bins]), requires_grad=requires_grad)
+        self.dct_matrix = nn.Parameter(torch.from_numpy(dct_matrix[:opts.num_ceps, :num_bins]),
+                                       requires_grad=requires_grad)
 
         self.lifter_coeffs = None
         if opts.cepstral_lifter != 0.0:
@@ -98,5 +99,3 @@ class MfccFeature(nn.Module):
 
         if opts.energy_floor > 0.0:
             self.log_energy_floor = np.log(opts.energy_floor)
-
-    

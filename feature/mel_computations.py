@@ -42,6 +42,9 @@ class MelBanks(object):
         # data domain:
         # center_freqs
         # bins
+        self.opts = opts
+        self.frame_opts = frame_opts
+
         num_bins = opts.num_bins
         assert num_bins >= 3, "Must have at least 3 mel bins"
         sample_freq = frame_opts.samp_freq
@@ -104,3 +107,10 @@ class MelBanks(object):
             # print(f"mel-banks compute {i}: offset: {offset}, v.dim: {v.shape[0]}, mel_energies_out: {mel_energies_out[i]} v:\n{v}")
 
         return mel_energies_out
+
+    def get_bins_matrix(self):
+        num_bins = len(self.bins)
+        filter_bank_matrix = np.zeros((num_bins, self.frame_opts.get_padded_window_size() // 2 + 1))
+        for i, (offset, this_bin) in enumerate(self.bins):
+            filter_bank_matrix[i, offset: offset + this_bin.shape[0]] = this_bin
+        return filter_bank_matrix
