@@ -13,7 +13,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from feature.feature_window import FrameExtractionOptions
-from torch_feature.feature_functions import init_preemph_matrix, init_window_function
+from torch_feature.feature_functions import *
 from feature.feature_mfcc import MfccOptions
 from matrix.matrix_functions import compute_dct_matrix
 from feature.mel_computations import compute_lifter_coeffs
@@ -25,6 +25,17 @@ class Window(nn.Module):
                  requires_grad=False):
         super(Window, self).__init__()
         self.opts = opts
+
+        window_ndarray = init_window_function(opts)
+        window_ndarray = window_ndarray * (np.eye(opts.get_win_size())[:, None, :])
+        self.window = nn.Parameter(window_ndarray, requires_grad=requires_grad)
+
+    def forward(self, inputs):
+        if inputs.ndim == 2:
+            inputs = torch.unsqueeze(inputs, 1)
+
+        outputs = F.conv1d(inputs, self.window, stride=self.opts.get_win_shift())
+        return outputs
 
 
 class StftFeature(nn.Module):
@@ -53,6 +64,12 @@ class StftFeature(nn.Module):
         return torch.from_numpy(enframe_basis.astype(np.float32)), torch.from_numpy(fft_basis.astype(np.float32))
 
     def forward(self, inputs: torch.Tensor):
+        if not self.opts.snip_edges:
+            # use reflection padding
+            wave_len = inputs.shape[1]
+            reflection_padding = torch.from_numpy(wave_reflection_padding(wave_len, self.opts))
+            inputs = inputs * reflection_padding
+
         if inputs.ndim == 2:
             inputs = torch.unsqueeze(inputs, 1)
 
@@ -85,11 +102,12 @@ class MfccFeature(nn.Module):
     def __init__(self, opts: MfccOptions, requires_grad):
         super(MfccFeature, self).__init__()
         self.opts = opts
-        num_bins = opts.mel_opts.num_bins
-        dct_matrix = np.zeros((num_bins, num_bins))
-        dct_matrix = compute_dct_matrix(dct_matrix)
-        self.dct_matrix = nn.Parameter(torch.from_numpy(dct_matrix[:opts.num_ceps, :num_bins]),
+        self.dct_matrix = nn.Parameter(torch.from_numpy(init_dct_matrix(opts)),
                                        requires_grad=requires_grad)
+        self.stft = StftFeature(opts.get_frame_options(), requires_grad)
+        self.filter_banks = nn.Parameter(
+            torch.from_numpy(init_mel_banks(opts.get_frame_options(), opts.get_frame_options())),
+            requires_grad=requires_grad)
 
         self.lifter_coeffs = None
         if opts.cepstral_lifter != 0.0:
@@ -99,3 +117,37 @@ class MfccFeature(nn.Module):
 
         if opts.energy_floor > 0.0:
             self.log_energy_floor = np.log(opts.energy_floor)
+
+    def forward(self, inputs):
+        if not self.opts.frame_opts.snip_edges:
+            wave_len = inputs.shape[1]
+            reflection_padding = torch.from_numpy(wave_reflection_padding(wave_len, self.opts.frame_opts))
+            inputs = inputs * reflection_padding
+
+        if inputs.ndim == 2:
+            inputs = torch.unsqueeze(inputs, 1)
+
+        if self.opts.use_energy and not self.opts.raw_energy:
+            signal_log_energy = torch.log(torch.sum(inputs * inputs, dim=1))
+        else:
+            signal_log_energy = self.log_energy_floor * torch.ones((inputs.shape[0],))
+
+        # compute power spectrum
+        outputs = self.stft(inputs)
+        # compute mel_energies
+        outputs = F.linear(outputs, self.filter_banks, bias=None)
+        outputs = torch.log(outputs)
+        outputs = F.linear(outputs, self.dct_matrix, bias=None)
+
+        # use cepstral_lifter
+        if self.lifter_coeffs is not None:
+            outputs = outputs * self.lifter_coeffs
+
+        if self.opts.use_energy:
+            if self.opts.energy_floor > 0.0:
+                # different wave may be different when signal_log_energy
+                signal_log_energy = torch.max(signal_log_energy,
+                                              self.log_energy_floor * torch.ones((inputs.shape[0],)))
+            outputs[:, 0] = signal_log_energy
+
+        return outputs
