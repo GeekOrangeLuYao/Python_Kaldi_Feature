@@ -6,7 +6,7 @@ from feature.feature_config import OptionsParser
 from feature.feature_writer import FeatureWriter
 from audio.wav_reader import WavReader
 
-parser = argparse.ArgumentParser(description="The tool to compute the fbank")
+parser = argparse.ArgumentParser(description="The tool to compute the stft")
 parser.add_argument("--data_path",
                     required=True,
                     help="The data_path to extract mfcc, wav.scp should be included")
@@ -28,7 +28,7 @@ def main(args):
 
     wav_reader = WavReader(data_path)
     option_parser = OptionsParser(conf_file=config_file, conf_section=config_section)
-    feature_extractor = FeatureExtractor(feature_type="fbank", option_parser=option_parser)
+    feature_extractor = FeatureExtractor(feature_type="stft", option_parser=option_parser)
     feature_writer = FeatureWriter(save_path, split_num=1)
 
     for utt_id, (wav, sample_rate) in wav_reader:

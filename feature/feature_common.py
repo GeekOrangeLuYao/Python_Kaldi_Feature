@@ -4,11 +4,12 @@ import numpy as np
 
 from feature.feature_fbank import FbankComputer, FbankOptions
 from feature.feature_mfcc import MfccComputer, MfccOptions
+from feature.feature_spectrogram import SpectrogramComputer, SpectrogramOptions
 from feature.feature_window import FeatureWindowFunction, compute_num_frames, extract_window
 from feature.feature_config import OptionsParser
 
-FeatureComputer = Union[FbankComputer, MfccComputer]
-FeatureOptions = Union[FbankOptions, MfccOptions]
+FeatureComputer = Union[FbankComputer, MfccComputer, SpectrogramComputer]
+FeatureOptions = Union[FbankOptions, MfccOptions, SpectrogramOptions]
 
 
 def build_feature_computer(feature_type, opts: FeatureOptions) -> FeatureComputer:
@@ -16,6 +17,8 @@ def build_feature_computer(feature_type, opts: FeatureOptions) -> FeatureCompute
         return MfccComputer(opts)
     elif feature_type == "fbank":
         return FbankComputer(opts)
+    elif feature_type == "stft":
+        return SpectrogramComputer(opts)
     else:
         raise ValueError(f"Wrong {feature_type}")
 
@@ -25,6 +28,8 @@ def build_feature_options(feature_type, option_parser: OptionsParser) -> Feature
         options = MfccOptions()
     elif feature_type == "fbank":
         options = FbankOptions()
+    elif feature_type == "stft":
+        options = SpectrogramOptions()
     else:
         raise ValueError(f"Feature type {feature_type} do not exist")
     options.register(option_parser)
