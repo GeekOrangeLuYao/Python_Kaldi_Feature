@@ -49,7 +49,6 @@ class FeatureExtractor(object):
     def compute(self, wave: np.ndarray) -> np.ndarray:
         rows_out = compute_num_frames(wave.shape[0], self.feature_computer.get_frame_extraction_options())
         cols_out = self.feature_computer.dim()
-        print(f"shape = {wave.shape[0]}, rows_out = {rows_out}")
 
         if rows_out == 0:
             return np.array([])
@@ -67,7 +66,6 @@ class FeatureExtractor(object):
                                                         self.feature_computer.get_frame_extraction_options(),
                                                         self.window_function, None)
                 raw_log_energy = 0.0
-            # print(f"raw_log_energy: {raw_log_energy}")
 
             output[r, :] = self.feature_computer.compute(raw_log_energy, window)
         return output

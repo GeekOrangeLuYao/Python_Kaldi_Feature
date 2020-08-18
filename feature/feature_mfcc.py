@@ -77,31 +77,26 @@ class MfccComputer(object):
 
         # Do srfft, and ComputePowerSpectrum
         signal_frame = np.fft.fft(signal_frame)
+        # print(f"signal_frame:\n{signal_frame}")
         signal_frame = np.abs(signal_frame) ** 2  # get energy
 
         signal_frame_dim = signal_frame.shape[0]
         power_spectrum = signal_frame[:signal_frame_dim // 2 + 1]
-        print(f"power_spectrum: \n{power_spectrum}")
 
         mel_energies = mel_banks.compute(power_spectrum)
         mel_energies = np.maximum(mel_energies, epsilon())
         mel_energies = np.log(mel_energies)
-        print(f"mel_energies: {mel_energies}")
 
         feature = np.matmul(self.dct_matrix, mel_energies)
-        print(f"feature:\n {feature}")
 
         if self.opts.cepstral_lifter != 0.0:
             feature = feature * self.lifter_coeffs
-        print(f"after cepstral_lifter feature:\n{feature}")
 
         if self.opts.use_energy:
             if self.opts.energy_floor > 0.0 and signal_log_energy < self.log_energy_floor:
                 signal_log_energy = self.log_energy_floor
-            print(f"signal_log_energy: {signal_log_energy}")
             feature[0] = signal_log_energy
 
-        print(f"final feature:\n{feature}")
         return feature
 
     def get_mel_banks(self) -> MelBanks:

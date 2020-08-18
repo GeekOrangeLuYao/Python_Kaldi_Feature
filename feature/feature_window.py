@@ -103,7 +103,7 @@ def first_sample_of_frame(frame, opts: FrameExtractionOptions):
 def compute_num_frames(num_samples, opts: FrameExtractionOptions, flush = True):
     frame_shift = opts.get_win_shift()
     frame_length = opts.get_win_size()
-    print(f"frame_shift: {frame_shift}, frame_length: {frame_length} opts.snip_edges: {opts.snip_edges}")
+    # print(f"frame_shift: {frame_shift}, frame_length: {frame_length} opts.snip_edges: {opts.snip_edges}")
 
     if opts.snip_edges:
         if num_samples < frame_length:
@@ -112,7 +112,7 @@ def compute_num_frames(num_samples, opts: FrameExtractionOptions, flush = True):
             return 1 + ((num_samples - frame_length) // frame_shift)
     else:
         num_frames = (num_samples + (frame_shift // 2)) // frame_shift
-        print(f"num_frames = {num_frames}, num_samples = {num_samples}, frame_shift = {frame_shift}")
+        # print(f"num_frames = {num_frames}, num_samples = {num_samples}, frame_shift = {frame_shift}")
         if flush:
             return num_frames
 
@@ -143,7 +143,7 @@ def preemphasize(wave_form: np.ndarray, preemph_coeff):
     while i > 0:
         wave_form[i] -= preemph_coeff * wave_form[i - 1]
         i -= 1
-    wave_form[0] -= preemph_coeff * wave_form[0]
+    wave_form[0] *= (1. - preemph_coeff)
     return wave_form
 
 
@@ -160,7 +160,7 @@ def process_window(opts: FrameExtractionOptions,
     if opts.remove_dc_offset:
         # print(f"remove_dc_offset: {np.sum(window)} frame_length: {frame_length} add_value: {(-np.sum(window) / frame_length)}")
         window -= np.sum(window) / frame_length
-    # print(f"after remove_dc_offset window:\n{window}")
+    # print(f"after remove_dc_offset outputs:\n{window}")
 
     if log_energy_pre_window is not None:
         energy = np.maximum(np.dot(window, window), epsilon())

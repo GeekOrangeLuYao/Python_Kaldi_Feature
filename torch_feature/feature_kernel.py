@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from base.math_util import epsilon
 from feature.feature_window import FrameExtractionOptions
 from torch_feature.feature_functions import *
 from feature.feature_mfcc import MfccOptions
@@ -45,6 +46,7 @@ class StftFeature(nn.Module):
         super(StftFeature, self).__init__()
         self.opts = opts
 
+        self.log_energy_pre_window = 0.0
         enframe_basis, fft_basis = self._init_kernel()
         self.enframe = nn.Parameter(enframe_basis, requires_grad=requires_grad)
         self.fft = nn.Parameter(fft_basis, requires_grad=requires_grad)
@@ -53,42 +55,47 @@ class StftFeature(nn.Module):
         enframe_basis = np.eye(self.opts.get_win_size())
         enframe_basis = np.expand_dims(enframe_basis, 1)
 
-        window = init_window_function(self.opts)
+        window = init_window_function(self.opts, padding_size=self.opts.get_padded_window_size())
         preemph_matrix = init_preemph_matrix(self.opts.get_padded_window_size(), self.opts.preemph_coeff)
+        preemph_matrix = window * preemph_matrix
         fourier_basis = np.fft.rfft(preemph_matrix)[:self.opts.get_win_size()]
         real_kernel = np.real(fourier_basis)
         imag_kernel = np.imag(fourier_basis)
         kernel = np.concatenate([real_kernel, imag_kernel], 1)
-        fft_basis = kernel.T * window
+        fft_basis = kernel.T# * window
 
         return torch.from_numpy(enframe_basis.astype(np.float32)), torch.from_numpy(fft_basis.astype(np.float32))
 
     def forward(self, inputs: torch.Tensor):
-        if not self.opts.snip_edges:
-            # use reflection padding
-            wave_len = inputs.shape[1]
-            reflection_padding = torch.from_numpy(wave_reflection_padding(wave_len, self.opts))
-            inputs = inputs * reflection_padding
+        # if not self.opts.snip_edges:
+        #     # use reflection padding
+        #     wave_len = inputs.shape[1]
+        #     reflection_padding = torch.from_numpy(wave_reflection_padding(wave_len, self.opts))
+        #     inputs = inputs * reflection_padding
 
         if inputs.ndim == 2:
             inputs = torch.unsqueeze(inputs, 1)
 
         outputs = F.conv1d(inputs, self.enframe, stride=self.opts.get_win_shift())
+        # print(f"in stft outputs:\n{outputs}\noutputs.shape = {outputs.shape}")
 
         if self.opts.remove_dc_offset:
             mean = torch.mean(outputs, 1, keepdim=True)
             outputs -= mean
 
         outputs = torch.transpose(outputs, 1, 2)
+
+        log_energy = torch.log(torch.clamp(torch.sum((outputs * outputs), dim = -1), min=epsilon()))
+
         outputs = F.linear(outputs, self.fft, bias=None)
         outputs = torch.transpose(outputs, 1, 2)
 
         dim = self.opts.get_padded_window_size() // 2 + 1
         real = outputs[:, :dim, :]
-        imag = outputs[:, dim, :]
+        imag = outputs[:, dim:, :]
 
         mags = real ** 2 + imag ** 2
-        return mags
+        return mags, log_energy
 
 
 class MfccFeature(nn.Module):
@@ -99,14 +106,16 @@ class MfccFeature(nn.Module):
         4. dct_matrix -> cepstral_lifter
     """
 
-    def __init__(self, opts: MfccOptions, requires_grad):
+    def __init__(self,
+                 opts: MfccOptions,
+                 requires_grad=False):
         super(MfccFeature, self).__init__()
         self.opts = opts
         self.dct_matrix = nn.Parameter(torch.from_numpy(init_dct_matrix(opts)),
                                        requires_grad=requires_grad)
         self.stft = StftFeature(opts.get_frame_options(), requires_grad)
         self.filter_banks = nn.Parameter(
-            torch.from_numpy(init_mel_banks(opts.get_frame_options(), opts.get_frame_options())),
+            torch.from_numpy(init_mel_banks(opts.mel_opts, opts.get_frame_options())),
             requires_grad=requires_grad)
 
         self.lifter_coeffs = None
@@ -115,29 +124,32 @@ class MfccFeature(nn.Module):
             self.lifter_coeffs = compute_lifter_coeffs(opts.cepstral_lifter, self.lifter_coeffs)
             self.lifter_coeffs = nn.Parameter(torch.from_numpy(self.lifter_coeffs), requires_grad=requires_grad)
 
+        self.log_energy_floor = 0.0
         if opts.energy_floor > 0.0:
             self.log_energy_floor = np.log(opts.energy_floor)
 
     def forward(self, inputs):
         if not self.opts.frame_opts.snip_edges:
-            wave_len = inputs.shape[1]
-            reflection_padding = torch.from_numpy(wave_reflection_padding(wave_len, self.opts.frame_opts))
-            inputs = inputs * reflection_padding
-
-        if inputs.ndim == 2:
-            inputs = torch.unsqueeze(inputs, 1)
+            inputs = tensor_reflection_padding(inputs, self.opts.frame_opts)
 
         if self.opts.use_energy and not self.opts.raw_energy:
             signal_log_energy = torch.log(torch.sum(inputs * inputs, dim=1))
         else:
             signal_log_energy = self.log_energy_floor * torch.ones((inputs.shape[0],))
 
+        if inputs.ndim == 2:
+            inputs = torch.unsqueeze(inputs, 1)
+
         # compute power spectrum
-        outputs = self.stft(inputs)
+        outputs, signal_log_energy = self.stft(inputs)
+
         # compute mel_energies
+        outputs = torch.transpose(outputs, 1, 2)
         outputs = F.linear(outputs, self.filter_banks, bias=None)
+        outputs = torch.clamp(outputs, min=epsilon())
         outputs = torch.log(outputs)
-        outputs = F.linear(outputs, self.dct_matrix, bias=None)
+        # outputs = torch.transpose(outputs, 1, 2)
+        outputs = F.linear(outputs, self.dct_matrix, bias = None)
 
         # use cepstral_lifter
         if self.lifter_coeffs is not None:
@@ -148,6 +160,6 @@ class MfccFeature(nn.Module):
                 # different wave may be different when signal_log_energy
                 signal_log_energy = torch.max(signal_log_energy,
                                               self.log_energy_floor * torch.ones((inputs.shape[0],)))
-            outputs[:, 0] = signal_log_energy
+            outputs[:, :, 0] = signal_log_energy
 
         return outputs

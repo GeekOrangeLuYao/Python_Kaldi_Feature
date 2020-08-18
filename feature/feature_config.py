@@ -22,7 +22,7 @@ class OptionsParser(object):
         assert conf_section in config
         for key in config[conf_section]:
             self.config_dict[key] = config[conf_section][key]
-            print(f"key = {key}, value = { config[conf_section][key] }")
+            # print(f"key = {key}, value = { config[conf_section][key] }")
 
     def get(self,
             item,

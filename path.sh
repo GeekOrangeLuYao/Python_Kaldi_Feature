@@ -7,5 +7,6 @@ export PYTHONPATH=$Python_Kaldi_Feature/featurebin:$PYTHONPATH
 export PYTHONPATH=$Python_Kaldi_Feature/matrix:$PYTHONPATH
 export PYTHONPATH=$Python_Kaldi_Feature/util:$PYTHONPATH
 export PYTHONPATH=$Python_Kaldi_Feature/audio:$PYTHONPATH
+export PYTHONPATH=$Python_Kaldi_Feature/torch_feature:$PYTHONPATH
 
 echo "add path finished"
