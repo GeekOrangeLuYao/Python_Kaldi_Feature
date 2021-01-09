@@ -50,6 +50,7 @@ So you can see there're less `assert` to check the dim problems.
 5. Add multiprocess part to improve the effectiveness
 6. More useful verbose and logging code
 7. `Tensorflow` support
+8. Compare with `torchaudio`
 
 Please give me more suggestions and help improvement!
 You can email [me](mailto:OrangeLuyao@outlook.com) and ask any questions in issue!
